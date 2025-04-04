@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if tenant %}{{ tenant.name }}{% else %}Blog{% endif %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #444;
+        }
+        article {
+            margin-bottom: 40px;
+        }
+        article h2 {
+            margin-bottom: 10px;
+        }
+        .meta {
+            color: #777;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        footer {
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            text-align: center;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{% if tenant %}{{ tenant.name }}{% else %}Welcome to Our Blog{% endif %}</h1>
+        <p>Insightful articles and updates</p>
+    </header>
+
+    <main>
+        <article>
+            <h2>Getting Started with FastAPI</h2>
+            <div class="meta">Published on April 4, 2025</div>
+            <p>
+                FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.7+
+                based on standard Python type hints. It's designed to be easy to use and to automatically create
+                OpenAPI and JSON Schema documentation.
+            </p>
+            <p>
+                In this article, we'll explore how to build a complete web application using FastAPI,
+                including routing, request validation, and database integration with SQLAlchemy.
+            </p>
+        </article>
+
+        <article>
+            <h2>Understanding Multi-Tenancy in Web Applications</h2>
+            <div class="meta">Published on April 1, 2025</div>
+            <p>
+                Multi-tenant architecture is an approach where a single instance of software serves multiple
+                customers (tenants). Each tenant's data is isolated from other tenants, even though they share
+                the same application and infrastructure.
+            </p>
+            <p>
+                This approach helps reduce costs by sharing resources across multiple customers while maintaining
+                data security and isolation. In this article, we'll discuss various approaches to implementing
+                multi-tenancy and their pros and cons.
+            </p>
+        </article>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 {% if tenant %}{{ tenant.name }}{% else %}Blog Platform{% endif %}. All rights reserved.</p>
+    </footer>
+
+    <!-- Include tracking script -->
+    <script src="{{ url_for('static', path='js/tracker.js') }}"></script>
+</body>
+</html>

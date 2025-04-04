@@ -1,0 +1,80 @@
+from fastapi import APIRouter, Depends, Request, HTTPException, Response
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
+from typing import List
+from pathlib import Path
+
+from app.db.base import get_db
+from app.models.tenant import Tenant
+from app.models.page_view import PageView
+from app.schemas.page_view import PageViewCreate, PageView as PageViewSchema
+from app.schemas.tenant import TenantCreate, Tenant as TenantSchema
+from app.core.config import settings
+
+router = APIRouter()
+
+templates = Jinja2Templates(directory=settings.TEMPLATES_DIR)
+
+# Helper function to get tenant based on domain
+def get_tenant_by_domain(domain: str, db: Session):
+    tenant = db.query(Tenant).filter(Tenant.domain == domain).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return tenant
+
+# Route for the blog page
+@router.get("/blog", response_class=HTMLResponse)
+async def blog_page(request: Request, db: Session = Depends(get_db)):
+    host = request.headers.get('host', '').split(':')[0]
+    try:
+        tenant = get_tenant_by_domain(host, db)
+        return templates.TemplateResponse(
+            "blog.html",
+            {"request": request, "tenant": tenant}
+        )
+    except HTTPException:
+        # If no tenant is found, return a default blog page
+        return templates.TemplateResponse(
+            "blog.html",
+            {"request": request, "tenant": None}
+        )
+
+# API endpoint to track page views
+@router.post("/track-pageview", response_model=PageViewSchema)
+async def track_pageview(
+    pageview: PageViewCreate,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    # Create new page view record
+    db_pageview = PageView(
+        tenant_id=pageview.tenant_id,
+        identity_id=pageview.identity_id,
+        session_id=pageview.session_id,
+        page_url=pageview.page_url,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host
+    )
+    db.add(db_pageview)
+    db.commit()
+    db.refresh(db_pageview)
+    return db_pageview
+
+# API endpoint to create a new tenant
+@router.post("/tenants", response_model=TenantSchema)
+async def create_tenant(
+    tenant: TenantCreate,
+    db: Session = Depends(get_db)
+):
+    db_tenant = Tenant(**tenant.dict())
+    db.add(db_tenant)
+    db.commit()
+    db.refresh(db_tenant)
+    return db_tenant
+
+# API endpoint to get all tenants
+@router.get("/tenants", response_model=List[TenantSchema])
+async def get_tenants(db: Session = Depends(get_db)):
+    tenants = db.query(Tenant).all()
+    return tenants
