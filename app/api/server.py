@@ -1,11 +1,9 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-import os
-from pathlib import Path
 
 from app.api.routes import router as api_router
-from app.core.config import settings
+from app.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
 

@@ -1,5 +1,5 @@
 import uvicorn
-from app.core.config import settings
+from app.config import settings
 from app.api.server import app
 
 if __name__ == "__main__":

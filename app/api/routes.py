@@ -6,12 +6,10 @@ from typing import List
 from pathlib import Path
 
 from uuid import uuid4
-from app.db.base import get_db
-from app.models.tenant import Tenant
-from app.models.page_view import PageView
-from app.schemas.page_view import PageViewCreate, PageView as PageViewSchema
-from app.schemas.tenant import TenantCreate, Tenant as TenantSchema
-from app.core.config import settings
+from app.db import get_db
+from app.models import PageView, Tenant
+from app.schemas import PageViewCreate, PageView as PageViewSchema, TenantCreate, Tenant as TenantSchema
+from app.config import settings
 
 router = APIRouter()
 
@@ -49,8 +47,7 @@ async def blog_page(request: Request, db: Session = Depends(get_db)):
             secure=False,                   # Change to True in production with HTTPS
             max_age=60 * 60 * 24 * 7        # 7 days
         )
-    
-    print("Session ID: ", session_id)
+
     return response
 
 
@@ -65,7 +62,6 @@ async def track_pageview(
     if not session_id:
         return {"error": "Session ID not found in cookies"}
     
-    print("Session ID2: ", session_id)
     # Create new page view record
     db_pageview = PageView(
         tenant_id=pageview.tenant_id,
