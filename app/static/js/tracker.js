@@ -16,39 +16,26 @@ function getCookie(name) {
     return null;
 }
 
-// Helper function to set a cookie
-function setCookie(name, value, days) {
-    let expires = '';
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = `; expires=${date.toUTCString()}`;
-    }
-    document.cookie = `${name}=${value}${expires}; path=/`;
-}
-
-// Generate a random session ID if not exists
-function getOrCreateSessionId() {
-    let sessionId = getCookie('sessionId');
-    if (!sessionId) {
-        sessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        setCookie('sessionId', sessionId, 1); // Session cookie expires in 1 day
-    }
-    return sessionId;
-}
-
 // Get tenant ID from the page (this would be set server-side in a real implementation)
 // For demonstration, we'll default to 1 if not found
 function getTenantId() {
     // In a real implementation, this would be injected by the server
     // based on the current domain/tenant
-    return 1; 
+    const host = window.location.hostname;
+    const subdomain = host.split('.')[0];
+
+    const tenantMap = {
+        tech: 1,
+        food: 2,
+        travel: 3,
+    };
+    return tenantMap[subdomain] || 4;
 }
 
 // Function to track page view
 function trackPageView() {
     const identityId = getCookie('identityId');
-    const sessionId = getOrCreateSessionId();
+    const sessionId = getCookie('session_id');
     const pageUrl = window.location.href;
     const tenantId = getTenantId();
 
