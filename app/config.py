@@ -16,7 +16,7 @@ class Settings(BaseModel):
     DATABASE_URL: str = "sqlite:///./fastapi_blog_tracker.db"
     
     # Templates
-    TEMPLATES_DIR: Path = Path(__file__).parent / "templates"
+    TEMPLATES_DIR: Path = Path(__file__).parent / "static"
 
     # Security
     SECRET_KEY: str = "supersecretkey"  # In production, use a proper secure key
