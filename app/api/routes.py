@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from pathlib import Path
 
+from uuid import uuid4
 from app.db.base import get_db
 from app.models.tenant import Tenant
 from app.models.page_view import PageView
@@ -26,19 +27,32 @@ def get_tenant_by_domain(domain: str, db: Session):
 # Route for the blog page
 @router.get("/blog", response_class=HTMLResponse)
 async def blog_page(request: Request, db: Session = Depends(get_db)):
+
     host = request.headers.get('host', '').split(':')[0]
+    session_id = request.cookies.get("session_id")
     try:
         tenant = get_tenant_by_domain(host, db)
-        return templates.TemplateResponse(
-            "blog.html",
-            {"request": request, "tenant": tenant}
-        )
     except HTTPException:
-        # If no tenant is found, return a default blog page
-        return templates.TemplateResponse(
-            "blog.html",
-            {"request": request, "tenant": None}
+        tenant = None
+
+    response = templates.TemplateResponse(
+        "blog.html",
+        {"request": request, "tenant": tenant}
+    )
+
+    if not session_id:
+        session_id = str(uuid4())
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=False,                 # Change to True (bcoz True is not working on local)
+            secure=False,                   # Change to True in production with HTTPS
+            max_age=60 * 60 * 24 * 7        # 7 days
         )
+    
+    print("Session ID: ", session_id)
+    return response
+
 
 # API endpoint to track page views
 @router.post("/track-pageview", response_model=PageViewSchema)
@@ -47,11 +61,16 @@ async def track_pageview(
     request: Request,
     db: Session = Depends(get_db)
 ):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return {"error": "Session ID not found in cookies"}
+    
+    print("Session ID2: ", session_id)
     # Create new page view record
     db_pageview = PageView(
         tenant_id=pageview.tenant_id,
         identity_id=pageview.identity_id,
-        session_id=pageview.session_id,
+        session_id=session_id,
         page_url=pageview.page_url,
         user_agent=request.headers.get("user-agent"),
         ip_address=request.client.host
