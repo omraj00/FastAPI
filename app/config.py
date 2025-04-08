@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-import os
 from pathlib import Path
 
 
@@ -17,10 +16,14 @@ class Settings(BaseModel):
     DATABASE_URL: str = "sqlite:///./fastapi_blog_tracker.db"
     
     # Templates
-    TEMPLATES_DIR: Path = Path(__file__).parent.parent / "templates"
+    TEMPLATES_DIR: Path = Path(__file__).parent / "static"
 
     # Security
     SECRET_KEY: str = "supersecretkey"  # In production, use a proper secure key
+
+    # Celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
     
     class Config:
         env_file = ".env"

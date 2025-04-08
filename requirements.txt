@@ -9,4 +9,6 @@ passlib
 bcrypt
 python-dotenv
 aiofiles
-
+celery==5.2.7
+redis==4.3.4
+kombu==5.2.4

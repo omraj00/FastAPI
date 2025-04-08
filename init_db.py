@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
-from app.db.base import engine, Base, SessionLocal
-from app.models.tenant import Tenant
-from app.models.page_view import PageView
+from app.db import engine, Base, SessionLocal
+from app.models import Tenant
 
 # Create tables
 def init_db():
