@@ -1,13 +1,14 @@
 # FastAPI Multi-Tenant Blog Tracker
 
-A FastAPI project with multi-tenancy support that tracks page views on a blog website. The system captures and stores identity ID from cookies, page URL, and session ID whenever a page is loaded.
+A FastAPI project with multi-tenancy support that tracks page views on a blog website. The system captures and stores identity ID from cookies, page URL, and session ID whenever a page is loaded. A background worker powered by Celery handles the actual logging of pageviews to reduce load on the main application.
 
 ## Features
 
 - Multi-tenant architecture
 - Blog page template
-- JavaScript tracking of page load events
-- Data storage for analytics
+- JavaScript-based page view tracking
+- Background processing with Celery
+- SQLite database with SQLAlchemy
 - RESTful API endpoints
 
 ## Project Structure
@@ -15,28 +16,26 @@ A FastAPI project with multi-tenancy support that tracks page views on a blog we
 ```
 fastapi_blog_tracker/
 ├── app/
-│   ├── api/
-│   │   ├── routes.py
-│   │   └── server.py
-│   ├── core/
-│   │   └── config.py
-│   ├── db/
-│   │   └── base.py
-│   ├── models/
-│   │   ├── tenant.py
-│   │   └── page_view.py
-│   ├── schemas/
-│   │   ├── tenant.py
-│   │   └── page_view.py
+│   ├── __init__.py
+│   ├── celery.py              # Celery app configuration
+│   ├── config.py              # App-level configuration (settings, constants)
+│   ├── db.py                  # SQLAlchemy DB setup and session
+│   ├── models.py              # SQLAlchemy models (e.g., PageView, Tenant)
+│   ├── routes.py              # API route definitions (track pageviews, blog view)
+│   ├── schemas.py             # Pydantic schemas for validation
+│   ├── server.py              # FastAPI app instance and route registration
+│   ├── tasks.py               # Celery background tasks (e.g., track_pageview_task)
 │   ├── static/
-│   │   └── js/
-│   │       └── tracker.js
-│   └── templates/
-│       └── blog.html
-├── init_db.py
-├── main.py
-├── requirements.txt
-└── README.md
+│   │   ├── blog.html          # HTML template for blog page
+│   │   └── tracker.js         # JS script for sending page view events
+│   └── __pycache__/           # Compiled Python cache (auto-generated)
+├── fastapi_blog_tracker.db    # SQLite database file
+├── Dockerfile                 # Docker config (optional)
+├── requirements.txt           # Python dependencies
+├── .gitignore                 # Files to ignore in version control
+├── README.md                  # Project overview and usage instructions
+└── main.py                    # App entry point (runs FastAPI server)
+
 ```
 
 ## Installation
@@ -65,6 +64,12 @@ python init_db.py
 
 ```bash
 python main.py
+```
+
+6. In a separate terminal, start the Celery worker:
+
+```bash
+celery -A app.celery.celery_app worker --loglevel=info
 ```
 
 ## Usage
