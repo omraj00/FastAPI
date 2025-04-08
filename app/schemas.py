@@ -56,3 +56,8 @@ class TenantInDB(TenantBase):
 
 class Tenant(TenantInDB):
     pass
+
+
+class TrackResponse(BaseModel):
+    message: str
+    status: str
