@@ -25,9 +25,6 @@ fastapi_blog_tracker/
 │   ├── schemas.py             # Pydantic schemas for validation
 │   ├── server.py              # FastAPI app instance and route registration
 │   ├── tasks.py               # Celery background tasks (e.g., track_pageview_task)
-│   └── static/
-│       ├── blog.html          # HTML template for blog page
-│       └── tracker.js         # JS script for sending page view events
 ├── fastapi_blog_tracker.db    # SQLite database file
 ├── Dockerfile                 # Docker config (optional)
 ├── requirements.txt           # Python dependencies

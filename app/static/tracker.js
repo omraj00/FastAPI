@@ -19,17 +19,8 @@ function getCookie(name) {
 // Get tenant ID from the page (this would be set server-side in a real implementation)
 // For demonstration, we'll default to 1 if not found
 function getTenantId() {
-    // In a real implementation, this would be injected by the server
-    // based on the current domain/tenant
-    const host = window.location.hostname;
-    const subdomain = host.split('.')[0];
-
-    const tenantMap = {
-        tech: 1,
-        food: 2,
-        travel: 3,
-    };
-    return tenantMap[subdomain] || 4;
+    const metaTag = document.querySelector('meta[name="tenant-id"]');
+    return metaTag ? parseInt(metaTag.content) : null;
 }
 
 // Function to track page view
@@ -38,6 +29,12 @@ function trackPageView() {
     const sessionId = getCookie('session_id');
     const pageUrl = window.location.href;
     const tenantId = getTenantId();
+
+    // Returns when tenantId is null or invalid
+    if (!tenantId || isNaN(tenantId)) {
+        console.error("Invalid tenantId:", tenantId);
+        return;
+    }
 
     // Prepare data for API call
     const data = {
