@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if tenant %}{{ tenant.name }}{% else %}Blog{% endif %}</title>
-    {% if tenant %}
-    <meta name="tenant-id" content="{{ tenant.id }}">
-    {% endif %}
+    <title id="page-title">Default Blog</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -47,7 +44,7 @@
 </head>
 <body>
     <header>
-        <h1>{% if tenant %}{{ tenant.name }}{% else %}Welcome to Our Blog{% endif %}</h1>
+        <h1 id="blog-title">Welcome to Our Default Blog</h1>
         <p>Insightful articles and updates</p>
     </header>
 

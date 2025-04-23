@@ -6,22 +6,26 @@ from typing import List
 
 from uuid import uuid4
 from app.db import get_db
-from app.models import Tenant
 from app.config import settings
-from app.tasks import save_user_journey
-from app.schemas import TrackResponse, PageViewCreate, TenantCreate, Tenant as TenantSchema
+from app.models import Tenant, StorageCategory
+from app.tasks import saving_to_db, saving_to_s3
+from app.schemas import TrackResponse, PageViewCreate, TenantCreate, TenantResponse, Tenant as TenantSchema
 
+import logging
 router = APIRouter()
-
+logger = logging.getLogger(__name__)
 templates = Jinja2Templates(directory=settings.TEMPLATES_DIR)
 
 
 # Helper function to get tenant based on domain
-def get_tenant_by_domain(domain: str, db: Session):
+@router.get("/get-tenant-id", response_model=TenantResponse)
+def get_tenant_by_domain(domain: str, db: Session = Depends(get_db)):
     tenant = db.query(Tenant).filter(Tenant.domain == domain).first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    return tenant
+    if not tenant.is_active:
+        raise HTTPException(status_code=400, detail="Tenant is not active")
+    return {"tenant": tenant.name, "tenant_id": tenant.id, "is_active": tenant.is_active}
 
 
 # Route for the blog page
@@ -30,15 +34,7 @@ async def blog_page(request: Request, db: Session = Depends(get_db)):
 
     host = request.headers.get('host', '').split(':')[0]
     session_id = request.cookies.get("session_id")
-    try:
-        tenant = get_tenant_by_domain(host, db)
-    except HTTPException:
-        tenant = None
-
-    response = templates.TemplateResponse(
-        "blog.html",
-        {"request": request, "tenant": tenant}
-    )
+    response = templates.TemplateResponse("blog.html", {"request": request})
 
     if not session_id:
         session_id = str(uuid4())
@@ -58,24 +54,45 @@ async def blog_page(request: Request, db: Session = Depends(get_db)):
 async def track_pageview(
     pageview: PageViewCreate,
     request: Request,
-    # db: Session = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     session_id = request.cookies.get("session_id")
     if not session_id:
         return {"error": "Session ID not found in cookies"}
-    # print("Session ID: ", session_id)
 
-    # Run Celery task
-    save_user_journey.delay({
-        "tenant_id": pageview.tenant_id,
-        "identity_id": pageview.identity_id,
-        "session_id": session_id,
-        "page_url": pageview.page_url,
-        "user_agent": request.headers.get("user-agent"),
-        "ip_address": request.client.host
-    })
+    try:
+        tenant = db.query(Tenant).filter(Tenant.id == pageview.tenant_id).first()
+    except Exception as e:
+        logger.error(f"Error fetching tenant: {e}")
+        tenant = None
 
-    # print("Session ID 2: ", session_id)
+    # Run Celery task conditionally
+    if tenant: 
+        if not tenant.is_active:
+            raise HTTPException(status_code=400, detail="Tenant is not active")
+        
+        if tenant.is_active and tenant.storage_type in [StorageCategory.both, StorageCategory.database]:
+            saving_to_db.delay({
+                "tenant_id": pageview.tenant_id,
+                "meta_data": pageview.meta_data,
+                "session_id": session_id,
+                "page_url": pageview.page_url,
+                "user_agent": request.headers.get("user-agent"),
+                "ip_address": request.client.host
+            })
+
+        if tenant.is_active and tenant.storage_type in [StorageCategory.both, StorageCategory.amazons3]:
+            saving_to_s3.delay({
+                "tenant_id": pageview.tenant_id,
+                "meta_data": pageview.meta_data,
+                "session_id": session_id,
+                "page_url": pageview.page_url,
+                "user_agent": request.headers.get("user-agent"),
+                "ip_address": request.client.host
+            })
+    else:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
     return {
         "message": "Pageview tracking started",
         "status": "processing"
@@ -88,7 +105,7 @@ async def create_tenant(
     tenant: TenantCreate,
     db: Session = Depends(get_db)
 ):
-    db_tenant = Tenant(**tenant.dict())
+    db_tenant = Tenant(**tenant.model_dump())
     db.add(db_tenant)
     db.commit()
     db.refresh(db_tenant)

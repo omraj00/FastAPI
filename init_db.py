@@ -1,6 +1,5 @@
-from sqlalchemy.orm import Session
+from app.models import Tenant, StorageCategory
 from app.db import engine, Base, SessionLocal
-from app.models import Tenant
 
 # Create tables
 def init_db():
@@ -14,10 +13,10 @@ def init_db():
     if not existing_tenants:
         # Add sample tenants
         sample_tenants = [
-            Tenant(name="Tech Blog", domain="tech.localhost"),
-            Tenant(name="Food Blog", domain="food.localhost"),
-            Tenant(name="Travel Blog", domain="travel.localhost"),
-            Tenant(name="Default Blog", domain="localhost")
+            Tenant(name="Tech Blog", domain="tech.localhost", storage_type=StorageCategory.database),
+            Tenant(name="Food Blog", domain="food.localhost", storage_type=StorageCategory.amazons3),
+            Tenant(name="Travel Blog", domain="travel.localhost", storage_type=StorageCategory.database),
+            Tenant(name="Default Blog", domain="localhost", storage_type=StorageCategory.database)
         ]
         db.add_all(sample_tenants)
         db.commit()
